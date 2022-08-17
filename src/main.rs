@@ -120,7 +120,7 @@ pub fn main() {
             event::Event::WindowEvent { event, .. } => match event {
                 event::WindowEvent::CloseRequested => control_flow.set_exit(),
                 event::WindowEvent::KeyboardInput { input, .. } => {
-                    if event::VirtualKeyCode::Escape == input.virtual_keycode.unwrap() {
+                    if Some(event::VirtualKeyCode::Escape) == input.virtual_keycode {
                         control_flow.set_exit()
                     }
                 }
