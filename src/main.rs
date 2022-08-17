@@ -3,7 +3,8 @@ extern crate env_logger;
 use gleam::gl::{GlFns, GlesFns};
 use glutin::{
     event,
-    event_loop::{self, ControlFlow},
+    event_loop::{self},
+    platform::run_return::EventLoopExtRunReturn,
     window::WindowBuilder,
     Api, ContextBuilder,
 };
@@ -47,7 +48,7 @@ impl RenderNotifier for Notifier {
 pub fn main() {
     env_logger::init();
 
-    let events_loop = event_loop::EventLoop::new();
+    let mut events_loop = event_loop::EventLoop::new();
     let window_builder = WindowBuilder::new()
         .with_visible(false)
         .with_transparent(true);
@@ -110,17 +111,17 @@ pub fn main() {
     txn.generate_frame(0, RenderReasons::empty());
     api.send_transaction(document_id, txn);
 
-    events_loop.run(move |global_event, _, control_flow| {
+    events_loop.run_return(|global_event, _, control_flow| {
         *control_flow = event_loop::ControlFlow::Wait;
         let window = windowed_context.window();
         let txn = Transaction::new();
 
         match global_event {
             event::Event::WindowEvent { event, .. } => match event {
-                event::WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                event::WindowEvent::CloseRequested => control_flow.set_exit(),
                 event::WindowEvent::KeyboardInput { input, .. } => {
                     if event::VirtualKeyCode::Escape == input.virtual_keycode.unwrap() {
-                        *control_flow = ControlFlow::Exit
+                        control_flow.set_exit()
                     }
                 }
                 _ => (),
@@ -138,6 +139,7 @@ pub fn main() {
         let _ = renderer.flush_pipeline_info();
         windowed_context.swap_buffers().unwrap();
     });
+    renderer.deinit();
 }
 
 fn render(
